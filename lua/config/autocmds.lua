@@ -6,3 +6,34 @@
 --
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
+
+-- Detect sway file config
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = {
+    "**/sway/config",
+    "**/sway/config.d/*",
+  },
+  callback = function()
+    vim.bo.filetype = "swayconfig"
+  end,
+})
+
+-- Detect zsh configuration files
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = {
+    "**/.zshrc",
+    "**/.zshenv",
+    "**/.zprofile",
+    "**/.zlogin",
+    "**/.zlogout",
+    "**/zshrc",
+    "**/zshenv",
+    "**/zprofile",
+    "**/zlogin",
+    "**/zlogout",
+    "**/zshrc/*",
+  },
+  callback = function()
+    vim.bo.filetype = "zsh"
+  end,
+})
