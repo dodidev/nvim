@@ -1,7 +1,7 @@
 return {
   {
     "nvim-flutter/flutter-tools.nvim",
-    lazy = true,
+    lazy = false,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "stevearc/dressing.nvim", -- optional for vim.ui.select
@@ -34,13 +34,12 @@ return {
           -- if empty dap will not stop on any exceptions, otherwise it will stop on those specified
           -- see |:help dap.set_exception_breakpoints()| for more info
           exception_breakpoints = {},
-          register_configurations = function(_)
-            -- require("dap").configurations.dart = {}
-            -- require("dap.ext.vscode").json_decode = require("json5").parse
+          register_configurations = function(paths)
+            -- Load .vscode/launch.json configurations
+            require("dap.ext.vscode").load_launchjs(nil, { dart = { "dart", "flutter" } })
 
-            -- stop only on certain exceptions (debugpy offers "raised", "uncaught")
-            -- require("dap").set_exception_breakpoints({ "uncaughted" })
-            -- require("dap").set_exception_breakpoints({ "raised", "uncaught" })
+            -- Optional: Set exception breakpoints
+            -- require("dap").set_exception_breakpoints({ "uncaught" })
           end,
         },
         root_patterns = { ".git", "pubspec.yaml" }, -- patterns to find the root of your flutter project
@@ -94,15 +93,17 @@ return {
         },
       })
       -- [[ Configure Flutter tools]]
-      vim.keymap.set(
-        "n",
-        "<leader>r",
-        require("telescope").extensions.flutter.commands,
-        { desc = "Open command Flutter" }
-      )
+      vim.keymap.set("n", "<leader>fr", "<cmd>FlutterRun<cr>", { desc = "Flutter Run" })
+      vim.keymap.set("n", "<leader>fH", "<cmd>FlutterReload<cr>", { desc = "Flutter Hot Reload" })
+      vim.keymap.set("n", "<leader>fR", "<cmd>FlutterRestart<cr>", { desc = "Flutter Restart" })
+      vim.keymap.set("n", "<leader>fq", "<cmd>FlutterQuit<cr>", { desc = "Flutter Quit" })
+      vim.keymap.set("n", "<leader>fD", "<cmd>FlutterDevices<cr>", { desc = "Flutter Devices" })
+      vim.keymap.set("n", "<leader>fe", "<cmd>FlutterEmulators<cr>", { desc = "Flutter Emulators" })
+
+      -- LazyVim already provides <leader>ca for code actions
       vim.keymap.set("n", "<leader>br", function()
         vim.cmd("20new")
-        vim.cmd("te fvm flutter packages pub run build_runner build --delete-conflicting-outputs")
+        vim.cmd("te fvm dart pub run build_runner build --delete-conflicting-outputs")
         vim.cmd("2sleep | normal G")
       end)
       -- '<Cmd>20new | te fvm flutter pub get && fvm flutter packages pub run build_runner build --delete-conflicting-outputs<CR> | $')
