@@ -3,5 +3,5 @@ return {
   -- if you're on windows
   -- run = 'powershell ./install.ps1'
   build = "./install.sh",
-  lazy = false,
+  lazy = true,
 }

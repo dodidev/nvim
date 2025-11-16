@@ -1,17 +1,7 @@
 return {
-  -- Debugger
-  -- {
-  --   "mfussenegger/nvim-dap",
-  --   dependencies = {
-  --     "nvim-neotest/nvim-nio",
-  --     "rcarriga/nvim-dap-ui",
-  --   },
-  --   event = "VeryLazy",
-  --   lazy = true,
-  -- },
   {
     "nvim-flutter/flutter-tools.nvim",
-    lazy = false,
+    lazy = true,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "stevearc/dressing.nvim", -- optional for vim.ui.select
