@@ -335,7 +335,12 @@ function M.run_all_tests()
   local success, audit = pcall(require, "scripts.security_audit")
   if not success then
     print("ERROR: Cannot load security_audit module")
-    print(audit)
+    print("Details: " .. tostring(audit))
+    print("\nTroubleshooting:")
+    print("  1. Ensure you're running from the repository root")
+    print("  2. Check that scripts/security_audit.lua exists")
+    print("  3. Verify Lua package path includes the current directory")
+    print("  Current path: " .. package.path)
     return false
   end
 

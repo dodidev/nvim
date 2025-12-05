@@ -78,31 +78,32 @@ function M.decode_base64(str)
   end
 
   local result = {}
-  local padding = 0
 
-  -- Count padding
-  for i = #str, #str - 1, -1 do
-    if str:sub(i, i) == "=" then
-      padding = padding + 1
-    else
-      break
-    end
-  end
+  -- Remove padding for processing
+  local clean_str = str:gsub("=+$", "")
+  local padding = #str - #clean_str
 
-  -- Decode
-  for i = 1, #str - padding, 4 do
-    local a = b64lookup[str:sub(i, i)] or 0
-    local b = b64lookup[str:sub(i + 1, i + 1)] or 0
-    local c = b64lookup[str:sub(i + 2, i + 2)] or 0
-    local d = b64lookup[str:sub(i + 3, i + 3)] or 0
+  -- Decode in groups of 4 input chars -> 3 output bytes
+  for i = 1, #clean_str, 4 do
+    local a = b64lookup[clean_str:sub(i, i)] or 0
+    local b = b64lookup[clean_str:sub(i + 1, i + 1)] or 0
+    local c = b64lookup[clean_str:sub(i + 2, i + 2)] or 0
+    local d = b64lookup[clean_str:sub(i + 3, i + 3)] or 0
 
     local n = a * 262144 + b * 4096 + c * 64 + d
 
-    table.insert(result, string.char(math.floor(n / 65536)))
-    if i + 2 <= #str - padding then
+    -- First byte is always present (at least 2 input chars needed)
+    if i + 1 <= #clean_str then
+      table.insert(result, string.char(math.floor(n / 65536)))
+    end
+    
+    -- Second byte present if we have at least 3 input chars
+    if i + 2 <= #clean_str then
       table.insert(result, string.char(math.floor((n % 65536) / 256)))
     end
-    if i + 3 <= #str - padding then
+    
+    -- Third byte present if we have 4 input chars
+    if i + 3 <= #clean_str then
       table.insert(result, string.char(n % 256))
     end
   end
@@ -115,12 +116,14 @@ function M.is_valid_base64(str)
   if #str < M.config.min_base64_length then
     return false
   end
-  -- Must be multiple of 4 (with or without padding)
+  -- Base64 strings should be multiples of 4 (padding included)
   if #str % 4 ~= 0 then
     return false
   end
   -- Check for valid base64 characters
-  return str:match("^[A-Za-z0-9+/]+=*$") ~= nil
+  -- Only = can appear at the end for padding
+  local main_part = str:match("^([A-Za-z0-9+/]+)(=*)$")
+  return main_part ~= nil
 end
 
 -- Decode and analyze content
@@ -564,8 +567,14 @@ function M.audit_directory(dirpath, options)
   options = options or {}
   local results = {}
 
+  -- Escape shell argument to prevent command injection
+  local function shell_escape(str)
+    return "'" .. str:gsub("'", "'\\''") .. "'"
+  end
+
   local function scan_dir(path)
-    local handle = io.popen('find "' .. path .. '" -name "*.lua" -type f')
+    local safe_path = shell_escape(path)
+    local handle = io.popen("find " .. safe_path .. " -name '*.lua' -type f")
     if not handle then
       return
     end
@@ -657,7 +666,16 @@ end
 function M.load_config(config_path)
   local success, config = pcall(dofile, config_path)
   if success and config then
-    M.config = vim.tbl_deep_extend("force", M.config, config)
+    -- Pure Lua table merge (no vim dependency)
+    for k, v in pairs(config) do
+      if type(v) == "table" and type(M.config[k]) == "table" then
+        for kk, vv in pairs(v) do
+          M.config[k][kk] = vv
+        end
+      else
+        M.config[k] = v
+      end
+    end
   end
 end
 

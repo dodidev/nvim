@@ -62,8 +62,11 @@ while IFS= read -r file; do
   if [ -f "$file" ]; then
     # Look for long base64 strings (50+ chars)
     grep -nE '[A-Za-z0-9+/]{50,}={0,2}' "$file" 2>/dev/null | while IFS=: read -r line_num match; do
+      # Extract the base64 string more carefully to preserve original
+      b64_string=$(echo "$match" | grep -oE '[A-Za-z0-9+/]{50,}={0,2}' | head -1)
+      
       # Try to decode and check for suspicious content
-      decoded=$(echo "$match" | grep -oE '[A-Za-z0-9+/]{50,}={0,2}' | head -1 | base64 -d 2>/dev/null || echo "")
+      decoded=$(echo "$b64_string" | base64 -d 2>/dev/null || echo "")
       
       if [ -n "$decoded" ]; then
         # Check for dangerous patterns in decoded content
@@ -144,10 +147,13 @@ echo "[*] Checking for dynamic process spawning..."
 while IFS= read -r file; do
   if [ -f "$file" ]; then
     grep -nE '(vim\.loop\.spawn|vim\.uv\.spawn|vim\.fn\.jobstart)' "$file" 2>/dev/null | while IFS=: read -r line_num match; do
-      # Check if there's string concatenation nearby (within 2 lines)
-      context=$(sed -n "$((line_num-1)),$((line_num+1))p" "$file" 2>/dev/null)
-      if echo "$context" | grep -qE '\.\.'; then
-        add_finding "HIGH" "$file" "$line_num" "Dynamic process spawning with constructed arguments" "$match"
+      # Validate line_num is numeric before arithmetic
+      if [[ "$line_num" =~ ^[0-9]+$ ]]; then
+        # Check if there's string concatenation nearby (within 2 lines)
+        context=$(sed -n "$((line_num-1)),$((line_num+1))p" "$file" 2>/dev/null)
+        if echo "$context" | grep -qE '\.\.'; then
+          add_finding "HIGH" "$file" "$line_num" "Dynamic process spawning with constructed arguments" "$match"
+        fi
       fi
     done
   fi
@@ -158,10 +164,13 @@ echo "[*] Checking for network operations..."
 while IFS= read -r file; do
   if [ -f "$file" ]; then
     grep -nE '(curl|wget|http://|https://)' "$file" 2>/dev/null | while IFS=: read -r line_num match; do
-      # Check if combined with code execution
-      context=$(sed -n "$((line_num-2)),$((line_num+2))p" "$file" 2>/dev/null)
-      if echo "$context" | grep -qE '(loadstring|io\.popen|os\.execute)'; then
-        add_finding "CRITICAL" "$file" "$line_num" "Network operation with code execution" "$match"
+      # Validate line_num is numeric before arithmetic
+      if [[ "$line_num" =~ ^[0-9]+$ ]]; then
+        # Check if combined with code execution
+        context=$(sed -n "$((line_num-2)),$((line_num+2))p" "$file" 2>/dev/null)
+        if echo "$context" | grep -qE '(loadstring|io\.popen|os\.execute)'; then
+          add_finding "CRITICAL" "$file" "$line_num" "Network operation with code execution" "$match"
+        fi
       fi
     done
   fi
