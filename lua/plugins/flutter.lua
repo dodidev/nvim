@@ -1,10 +1,53 @@
 return {
   {
     "nvim-flutter/flutter-tools.nvim",
-    lazy = false,
+    lazy = true,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "stevearc/dressing.nvim", -- optional for vim.ui.select
+    },
+    keys = {
+      -- Flutter Run & Device Management
+      { "<leader>Fc", "<cmd>FlutterRun<cr>", desc = "Flutter Run" },
+      { "<leader>Fq", "<cmd>FlutterQuit<cr>", desc = "Flutter Quit" },
+      { "<leader>Fd", "<cmd>FlutterDevices<cr>", desc = "Flutter Devices" },
+      { "<leader>Fe", "<cmd>FlutterEmulators<cr>", desc = "Flutter Emulators" },
+
+      -- Hot Reload & Restart
+      { "<leader>Fr", "<cmd>FlutterReload<cr>", desc = "Flutter Hot Reload" },
+      { "<leader>FR", "<cmd>FlutterRestart<cr>", desc = "Flutter Hot Restart" },
+
+      -- DevTools & Logs
+      { "<leader>Flt", "<cmd>FlutterLogToggle<cr>", desc = "Flutter Toggle Log" },
+      { "<leader>Flc", "<cmd>FlutterLogClear<cr>", desc = "Flutter Clear Logs" },
+      { "<leader>Ft", "<cmd>FlutterDevTools<cr>", desc = "Flutter DevTools" },
+
+      -- Outline & Profiler
+      { "<leader>Fo", "<cmd>FlutterOutlineToggle<cr>", desc = "Flutter Outline Toggle" },
+      { "<leader>Fp", "<cmd>FlutterCopyProfilerUrl<cr>", desc = "Flutter Copy Profiler URL" },
+
+      -- Dart Build Runner
+      {
+        "<leader>Fb",
+        function()
+          vim.cmd("split | terminal fvm dart run build_runner build --delete-conflicting-outputs")
+        end,
+        desc = "Dart Build Runner (build)",
+      },
+      {
+        "<leader>Fw",
+        function()
+          vim.cmd("split | terminal fvm dart run build_runner watch --delete-conflicting-outputs")
+        end,
+        desc = "Dart Build Runner (watch)",
+      },
+      {
+        "<leader>FW",
+        function()
+          vim.cmd("split | terminal fvm dart run build_runner clean")
+        end,
+        desc = "Dart Build Runner (clean)",
+      },
     },
     config = function()
       local flutterConfig = require("flutter-tools")
@@ -16,97 +59,61 @@ return {
         },
         decorations = {
           statusline = {
-            -- set to true to be able use the 'flutter_tools_decorations.app_version' in your statusline
-            -- this will show the current version of the flutter app from the pubspec.yaml file
             app_version = true,
-            -- set to true to be able use the 'flutter_tools_decorations.device' in your statusline
-            -- this will show the currently running device if an application was started with a specific
-            -- device
             device = true,
-            -- set to true to be able use the 'flutter_tools_decorations.project_config' in your statusline
-            -- this will show the currently selected project configuration
             project_config = true,
           },
         },
-        debugger = { -- integrate with nvim dap + install dart code debugger
+        debugger = {
           enabled = true,
-          run_via_dap = false, -- use dap instead of a plenary job to run flutter apps
-          -- if empty dap will not stop on any exceptions, otherwise it will stop on those specified
-          -- see |:help dap.set_exception_breakpoints()| for more info
+          run_via_dap = false,
           exception_breakpoints = {},
           register_configurations = function(paths)
-            -- Load .vscode/launch.json configurations
+            ---@diagnostic disable-next-line: deprecated
             require("dap.ext.vscode").load_launchjs(nil, { dart = { "dart", "flutter" } })
-
-            -- Optional: Set exception breakpoints
-            -- require("dap").set_exception_breakpoints({ "uncaught" })
           end,
         },
-        root_patterns = { ".git", "pubspec.yaml" }, -- patterns to find the root of your flutter project
-        fvm = true, -- takes priority over path, uses <workspace>/.fvm/flutter_sdk if enabled
+        root_patterns = { ".git", "pubspec.yaml" },
+        fvm = true, -- flutter-tools will automatically use fvm for Flutter commands
         widget_guides = {
           enabled = false,
         },
         closing_tags = {
-          highlight = "Comment", -- highlight for the closing tag
-          prefix = "//", -- character to use for close tag e.g. > Widget
-          enabled = true, -- set to false to disable
+          highlight = "Comment",
+          prefix = "//",
+          enabled = true,
         },
         dev_log = {
           enabled = true,
-          notify_errors = false, -- if there is an error whilst running then notify the user
-          open_cmd = "tabedit", -- command to us
+          notify_errors = false,
+          open_cmd = "tabedit",
         },
         dev_tools = {
-          autostart = false, -- autostart devtools server if not detected
-          auto_open_browser = false, -- Automatically opens devtools in the browser
+          autostart = false,
+          auto_open_browser = false,
         },
         outline = {
-          open_cmd = "30vnew", -- command to use to open the outline buffer
-          auto_open = false, -- if true this will open the outline automatically when it is first populated
+          open_cmd = "30vnew",
+          auto_open = false,
         },
         lsp = {
-          color = { -- show the derived colours for dart variables
-            enabled = false, -- whether or not to highlight color variables at all, only supported on flutter >= 2.10
-            background = false, -- highlight the background
-            background_color = nil, -- required, when background is transparent (i.e. background_color = { r = 19, g = 17, b = 24},)
-            foreground = false, -- highlight the foreground
-            virtual_text = true, -- show the highlight using virtual text
-            virtual_text_str = "■", -- the virtual text character to highlight
+          color = {
+            enabled = false,
+            background = false,
+            background_color = nil,
+            foreground = false,
+            virtual_text = true,
+            virtual_text_str = "■",
           },
-          --- OR you can specify a function to deactivate or change or control how the config is created
-          capabilities = function(config)
-            config.specificThingIDontWant = false
-            return config
-          end,
-          analysisExcludedFolders = { "./fvm/" },
-          -- see the link below for details on each option:
-          -- https://github.com/dart-lang/sdk/blob/master/pkg/analysis_server/tool/lsp_spec/README.md#client-workspace-configuration
           settings = {
-            lineLength = 140,
             showTodos = true,
             completeFunctionCalls = true,
-            renameFilesWithClasses = "prompt", -- "always"
-            -- enableSnippets = true,
-            updateImportsOnRename = true, -- Whether to update imports and other directives when files are renamed. Required for `FlutterRename` command.
+            renameFilesWithClasses = "prompt",
+            enableSnippets = true,
+            updateImportsOnRename = true,
           },
         },
       })
-      -- [[ Configure Flutter tools]]
-      vim.keymap.set("n", "<leader>fr", "<cmd>FlutterRun<cr>", { desc = "Flutter Run" })
-      vim.keymap.set("n", "<leader>fH", "<cmd>FlutterReload<cr>", { desc = "Flutter Hot Reload" })
-      vim.keymap.set("n", "<leader>fR", "<cmd>FlutterRestart<cr>", { desc = "Flutter Restart" })
-      vim.keymap.set("n", "<leader>fq", "<cmd>FlutterQuit<cr>", { desc = "Flutter Quit" })
-      vim.keymap.set("n", "<leader>fD", "<cmd>FlutterDevices<cr>", { desc = "Flutter Devices" })
-      vim.keymap.set("n", "<leader>fe", "<cmd>FlutterEmulators<cr>", { desc = "Flutter Emulators" })
-
-      -- LazyVim already provides <leader>ca for code actions
-      vim.keymap.set("n", "<leader>br", function()
-        vim.cmd("20new")
-        vim.cmd("te fvm dart pub run build_runner build --delete-conflicting-outputs")
-        vim.cmd("2sleep | normal G")
-      end)
-      -- '<Cmd>20new | te fvm flutter pub get && fvm flutter packages pub run build_runner build --delete-conflicting-outputs<CR> | $')
     end,
   },
 }
