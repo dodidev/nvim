@@ -26,7 +26,8 @@ return {
 
   -- Better surrounding operations
   {
-    "vim-mini/mini.surround",
+
+    "nvim-mini/mini.surround",
     recommended = true,
     opts = {
       mappings = {

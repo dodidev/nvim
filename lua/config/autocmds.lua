@@ -1,5 +1,5 @@
 -- Autocmds are automatically loaded on the VeryLazy event
--- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
+-- Default autocmds that are always set:  https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds. lua
 --
 -- Add any additional autocmds here
 -- with `vim.api.nvim_create_autocmd`
@@ -35,5 +35,28 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
   },
   callback = function()
     vim.bo.filetype = "zsh"
+  end,
+})
+
+-- Detect bash configuration files
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = {
+    "**/.bashrc",
+    "**/.bash_profile",
+    "**/.bash_login",
+    "**/.bash_logout",
+    "**/.bash_aliases",
+    "**/.bash_functions",
+    "**/bashrc",
+    "**/bash_profile",
+    "**/bash_login",
+    "**/bash_logout",
+    "**/bash_aliases",
+    "**/bash_functions",
+    "**/bashrc/*",
+    "**/.profile",
+  },
+  callback = function()
+    vim.bo.filetype = "bash"
   end,
 })

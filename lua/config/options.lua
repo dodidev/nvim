@@ -7,9 +7,6 @@
 
 local opt = vim.opt
 
--- Enable project-specific configs
-vim.g.lazyvim_local_config = true
-
 -- Better editor settings
 opt.relativenumber = true -- Show relative line numbers
 opt.scrolloff = 8 -- Keep 8 lines above/below cursor
