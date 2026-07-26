@@ -90,3 +90,25 @@ vim.lsp.handlers["textDocument/signatureHelp"] = function(err, result, ctx, conf
     vim.tbl_extend("force", { border = "rounded", max_width = 80, focusable = false }, config or {})
   )
 end
+
+-- -----------------------------------------------------------------------------
+-- OSC52 clipboard integration (for tmux, iTerm2, etc.)
+-- -----------------------------------------------------------------------------
+
+local osc52 = require("vim.ui.clipboard.osc52")
+
+vim.g.clipboard = {
+  name = "OSC52-Clipboard",
+  copy = {
+    ["+"] = osc52.copy("+"),
+    ["*"] = osc52.copy("+"), -- Intentionally using '+' here to prevent dual execution
+  },
+  paste = {
+    ["+"] = function()
+      return {}
+    end,
+    ["*"] = function()
+      return {}
+    end,
+  },
+}
