@@ -686,7 +686,11 @@ return {
           float_win_config = { auto_focus = false },
         },
         server = {
-          root_dir = ide_root.strict_root_dir({ "Cargo.toml" }),
+          -- Rust files must attach to their Cargo project even when Neovim's
+          -- cwd is a sibling project (for example app_grimo vs backend).
+          root_dir = function(filename)
+            return ide_root.detect_root(filename, { "Cargo.toml" })
+          end,
 
           on_attach = function(_, bufnr)
             local o = { buffer = bufnr, silent = true }
@@ -722,7 +726,8 @@ return {
                 allFeatures = false,
                 loadOutDirsFromCheck = false, -- skip out-dirs scan (expensive)
               },
-              checkOnSave = {
+              checkOnSave = true,
+              check = {
                 command = "clippy",
                 extraArgs = { "--no-deps" }, -- only check current crate
               },

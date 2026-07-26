@@ -16,6 +16,8 @@ return {
         json = { "fixjson", "prettierd", "prettier", stop_after_first = true },
         lua = { "stylua" },
         markdown = { "mdformat", "prettierd", "prettier", stop_after_first = true },
+        -- Ruff and Black use 88 columns by default. 120 keeps ordinary Python
+        -- expressions on one line without disabling consistent formatting.
         python = { "ruff_format", "black", stop_after_first = true },
         rust = { "rustfmt" },
         scss = { "prettierd", "prettier", stop_after_first = true },
@@ -35,7 +37,9 @@ return {
       local function sqlfluff_dialect(ctx)
         local filename = ctx and ctx.filename or vim.api.nvim_buf_get_name(0)
         local ft = vim.bo[ctx and ctx.buf or 0].filetype
-        if vim.fs.find({ ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" }, { path = filename, upward = true })[1] then
+        if
+          vim.fs.find({ ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" }, { path = filename, upward = true })[1]
+        then
           return nil
         end
         if
@@ -56,6 +60,14 @@ return {
       end
 
       opts.formatters = vim.tbl_deep_extend("force", opts.formatters or {}, {
+        ruff_format = {
+          args = { "format", "--line-length", "120", "--stdin-filename", "$FILENAME", "-" },
+          stdin = true,
+        },
+        black = {
+          args = { "--line-length", "120", "-" },
+          stdin = true,
+        },
         sqlfluff = {
           args = function(_, ctx)
             local args = { "format", "--disable-progress-bar", "-" }
@@ -74,7 +86,7 @@ return {
   {
     "mfussenegger/nvim-lint",
     opts = function(_, opts)
-      opts.events = { "BufReadPost", "BufWritePost" }
+      opts.events = { "BufReadPost", "BufWritePost", "InsertLeave" }
       opts.linters_by_ft = vim.tbl_deep_extend("force", opts.linters_by_ft or {}, {
         astro = { "eslint_d" },
         bash = { "shellcheck" },
@@ -110,7 +122,9 @@ return {
 
       local function sqlfluff_dialect(ctx)
         local ft = vim.bo[ctx.bufnr].filetype
-        if vim.fs.find({ ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" }, { path = ctx.filename, upward = true })[1] then
+        if
+          vim.fs.find({ ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" }, { path = ctx.filename, upward = true })[1]
+        then
           return nil
         end
         if
@@ -167,7 +181,10 @@ return {
             return vim.fn.executable("sqlfluff") == 1
               and (
                 sqlfluff_dialect(ctx) ~= nil
-                or vim.fs.find({ ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" }, { path = ctx.filename, upward = true })[1]
+                or vim.fs.find(
+                    { ".sqlfluff", "setup.cfg", "tox.ini", "pyproject.toml" },
+                    { path = ctx.filename, upward = true }
+                  )[1]
                   ~= nil
               )
           end,

@@ -104,6 +104,12 @@ return {
     end
 
     ls.add_snippets("all", {
+      s("endesh", {
+        t("–"),
+      }),
+      s("emdash", {
+        t("—"),
+      }),
       s("pbar", {
         f(function()
           return section_prefix("SECTION")

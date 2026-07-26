@@ -6,7 +6,7 @@ Performance-first LazyVim setup for Neovim 0.13+ with `fzf-lua`, strict project-
 
 - **Fast startup bias**: `vim.loader.enable()`, lazy-loaded custom plugins, reduced `shada`, large-file Treesitter guard, and conservative language-server settings.
 - **Project-scoped LSP**: servers autostart only when the detected project root matches the current window's working directory.
-- **Coding intelligence**: LazyVim LSP + blink.cmp, Copilot suggestions, per-language formatter setup through `conform.nvim`, and lightweight linting through `nvim-lint`.
+- **Coding intelligence**: LazyVim LSP + blink.cmp, Copilot suggestions, per-language formatter setup through `conform.nvim`, and lightweight linting through `nvim-lint`. Python uses Ruff by default; Pyright is disabled to avoid its persistent Node process.
 - **Manual web stack support**: Astro, React, Vue, TypeScript, Tailwind, HTML/CSS, Python, Rust, Flutter, C, and C++ are configured without importing the heavier LazyVim language extras.
 - **Picker workflow**: `fzf-lua` replaces Telescope for files, grep, diagnostics, and workspace symbols.
 
@@ -45,7 +45,7 @@ Configured formatter defaults currently cover:
 | Filetype | Formatter |
 | --- | --- |
 | Lua | `stylua` |
-| Python | `ruff_format` or `black` |
+| Python | `ruff_format` or `black` (120-column default) |
 | C / C++ | `clang_format` |
 | C# | `csharpier` |
 | Rust | `rustfmt` |
@@ -65,6 +65,18 @@ Configured linting currently focuses on lightweight, editor-friendly cases:
 | Shell | `shellcheck` |
 | Lua | `selene` (only when a Selene config is present) |
 | Markdown | `markdownlint-cli2` |
+
+## Python Debugging
+
+`debugpy` is installed through Mason when you first run a DAP command. Python
+debugging uses a project `.venv/bin/python` automatically, then an activated
+virtualenv, then `python3`.
+
+- `<leader>db` — toggle breakpoint
+- `<leader>dc` — start / continue current file
+- `<leader>di` / `<leader>dO` — step into / over
+- `<leader>dt` — stop
+- `<leader>du` — toggle debug UI
 
 ## First Run
 

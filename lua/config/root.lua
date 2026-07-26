@@ -26,6 +26,10 @@ M.project_markers = {
   "*.csproj",
   "omnisharp.json",
   "pyproject.toml",
+  "uv.lock",
+  "poetry.lock",
+  "Pipfile",
+  "manage.py",
   "setup.py",
   "setup.cfg",
   "requirements.txt",
@@ -53,24 +57,56 @@ function M.detect_root(source, markers)
   return normalize(vim.fs.root(source, markers or M.project_markers))
 end
 
+function M.cwd_related_to_root(root)
+  local cwd = M.current_cwd()
+  if not root or not cwd then
+    return false
+  end
+  return cwd == root or vim.startswith(cwd, root .. "/") or vim.startswith(root, cwd .. "/")
+end
+
 function M.strict_root_dir(markers)
-  return function(source)
+  return function(source, on_dir)
     local root = M.detect_root(source, markers)
     if not root then
+      if on_dir then
+        return
+      end
       return nil
     end
+
     if vim.g.lsp_manual_start then
+      if on_dir then
+        on_dir(root)
+        return
+      end
       return root
     end
-    return root == M.current_cwd() and root or nil
+
+    if not M.cwd_related_to_root(root) then
+      if on_dir then
+        return
+      end
+      return nil
+    end
+
+    if on_dir then
+      on_dir(root)
+      return
+    end
+    return root
   end
 end
 
 function M.start_current_buffer_lsp(timeout_ms)
   vim.g.lsp_manual_start = true
-  require("lspconfig")
   local ok, err = pcall(function()
-    vim.cmd("LspStart")
+    vim.cmd("doautocmd <nomodeline> FileType")
+    for _, server in ipairs({ "vtsls", "pyright", "ruff" }) do
+      if vim.lsp.config[server] then
+        vim.lsp.enable(server, true)
+      end
+    end
   end)
   vim.defer_fn(function()
     vim.g.lsp_manual_start = false

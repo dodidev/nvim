@@ -1,9 +1,8 @@
 -- LSP configuration with strict root-project autostart.
 --
--- Rule: a language server only autostarts when the detected project root
--- exactly matches the current window's working directory (vim.fn.getcwd(0)).
--- This prevents sub-project servers (e.g. /android inside a Flutter tree)
--- from spinning up automatically.
+-- Rule: a language server autostarts when the detected project root is related
+-- to the current window's working directory (same path, parent, or child).
+-- This keeps project-scoped roots while allowing monorepo subprojects.
 --
 -- Override: <leader>ls  /  :LspManualStart
 -- Sets vim.g.lsp_manual_start = true for 3 s, allowing any root.
@@ -65,6 +64,19 @@ vim.api.nvim_create_user_command("LspAdoptRoot", function()
 end, { desc = "Adopt the current buffer root in this window and start LSP" })
 
 return {
+  {
+    "mason-org/mason.nvim",
+    opts = {
+      ensure_installed = {
+        "ruff",
+        "black",
+        "prettier",
+        "prettierd",
+        "eslint_d",
+      },
+    },
+  },
+
   {
     "neovim/nvim-lspconfig",
     opts = {
@@ -135,13 +147,22 @@ return {
 
         vue_ls = {
           root_dir = ide_root.strict_root_dir({
-            "vue.config.js", "vite.config.js", "vite.config.ts", "package.json", ".git",
+            "vue.config.js",
+            "vite.config.js",
+            "vite.config.ts",
+            "package.json",
+            ".git",
           }),
         },
 
         astro = {
           root_dir = ide_root.strict_root_dir({
-            "astro.config.js", "astro.config.mjs", "astro.config.cjs", "astro.config.ts", "package.json", ".git",
+            "astro.config.js",
+            "astro.config.mjs",
+            "astro.config.cjs",
+            "astro.config.ts",
+            "package.json",
+            ".git",
           }),
         },
 
@@ -208,35 +229,63 @@ return {
 
         -- ── Python ───────────────────────────────────────────────────────────
         pyright = {
+          -- Avoid Pyright's persistent Node process; Ruff stays enabled.
+          enabled = false,
           root_dir = ide_root.strict_root_dir({
-            "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git",
+            "pyproject.toml",
+            "uv.lock",
+            "poetry.lock",
+            "Pipfile",
+            "manage.py",
+            "setup.py",
+            "setup.cfg",
+            "requirements.txt",
+            ".git",
           }),
           settings = {
             python = {
               analysis = {
-                indexing              = false,           -- no background indexing
-                typeCheckingMode      = "basic",         -- balanced accuracy/speed
+                indexing = false, -- no background indexing
+                typeCheckingMode = "basic", -- balanced accuracy/speed
                 autoImportCompletions = true,
-                diagnosticMode        = "openFilesOnly", -- only analyse open files
+                diagnosticMode = "openFilesOnly", -- only analyse open files
               },
             },
           },
         },
 
+        ruff = {
+          root_dir = ide_root.strict_root_dir({
+            "pyproject.toml",
+            "uv.lock",
+            "poetry.lock",
+            "Pipfile",
+            "manage.py",
+            "setup.py",
+            "setup.cfg",
+            "requirements.txt",
+            ".git",
+          }),
+        },
+
         -- ── C / C++ ──────────────────────────────────────────────────────────
         clangd = {
           root_dir = ide_root.strict_root_dir({
-            ".git", "compile_commands.json", "compile_flags.txt", "CMakeLists.txt", "Makefile",
+            ".git",
+            "compile_commands.json",
+            "compile_flags.txt",
+            "CMakeLists.txt",
+            "Makefile",
           }),
           cmd = {
             "clangd",
             "--background-index=false", -- no persistent background indexing
-            "--clang-tidy=false",        -- run tidy separately if needed
+            "--clang-tidy=false", -- run tidy separately if needed
             "--header-insertion=never",
             "--completion-style=bundled",
-            "--malloc-trim",             -- release memory when idle
+            "--malloc-trim", -- release memory when idle
             "--limit-results=20",
-            "-j=1",                      -- single-thread mode
+            "-j=1", -- single-thread mode
           },
         },
 
